@@ -1,0 +1,22 @@
+name: large_file_uploader
+description: A new Flutter package project.
+version: 0.0.2
+homepage: https://github.com/6thsolution/large_file_uploader
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=1.20.0"
+
+flutter:
+  plugin:
+    platforms:
+      web:
+        default_package: large_file_uploader
+
+dependencies:
+  flutter:
+    sdk: flutter
+  universal_html: ^2.0.8
+
+dev_dependencies:
+  flutter_lints: ^1.0.0
