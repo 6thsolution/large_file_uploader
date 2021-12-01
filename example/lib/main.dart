@@ -1,3 +1,5 @@
+import 'dart:html' as html;
+
 import 'package:flutter/material.dart';
 import 'package:large_file_uploader/large_file_uploader.dart';
 
@@ -20,38 +22,111 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class UploadExample extends StatelessWidget {
+class UploadExample extends StatefulWidget {
   const UploadExample({Key? key}) : super(key: key);
 
   @override
+  State<UploadExample> createState() => _UploadExampleState();
+}
+
+class _UploadExampleState extends State<UploadExample> {
+  late final LargeFileUploader _largeFileUploader;
+
+  html.File? pickedFile;
+  html.File? pickedThumbnail;
+
+  bool isFileSelected = false;
+  bool isThumbnailSelected = false;
+
+  final accessToken = '';
+  final url = '';
+
+  @override
+  void initState() {
+    _largeFileUploader = LargeFileUploader();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ElevatedButton(
-            onPressed: () {
-              LargeFileUploader(
-                jsWorkerName: 'upload_worker.js',
-              ).selectFileAndUpload(
-                method: 'POST',
-                fileKeyInFormData: 'file',
-                uploadUrl: 'https://baseurl.com/upload-path',
-                data: {
-                  'title': 'awesome file',
+    return Scaffold(
+      body: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+                onPressed: () {
+                  _largeFileUploader.pick(
+                      type: FileTypes.file,
+                      callback: (file) {
+                        setState(() {
+                          pickedFile = file;
+                          isFileSelected = false;
+                        });
+                      });
                 },
-                headers: {'Authorization': 'Bearer jwtToken'},
-                onSendProgress: (progress) =>
-                    debugPrint('onSendProgress:$progress'),
-                fakePreProcessMaxProgress: 30,
-                fakePreProcessProgressPeriodInMillisecond: 500,
-                onSendWithFakePreProcessProgress: (progress) =>
-                    debugPrint('onSendWithFakePreProcessProgress:$progress'),
-                onComplete: () => debugPrint('onComplete'),
-                onFailure: () => debugPrint('onFailure'),
-              );
-            },
-            child: const Text("Select File And Upload")),
-      ],
+                child: const Text("Select File And Upload")),
+            const SizedBox(
+              height: 8,
+            ),
+            if (isFileSelected)
+              const Text(
+                "You need to select a file first",
+                style: TextStyle(color: Colors.red),
+              ),
+            const SizedBox(
+              height: 8,
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  _largeFileUploader.pick(
+                      type: FileTypes.image,
+                      callback: (file) {
+                        setState(() {
+                          pickedThumbnail = file;
+                          isThumbnailSelected = false;
+                        });
+                      });
+                },
+                child: const Text("Select Thumbnail")),
+            const SizedBox(
+              height: 8,
+            ),
+            if (isThumbnailSelected)
+              const Text(
+                "You need to select a thumbnail first",
+                style: TextStyle(color: Colors.red),
+              ),
+            const SizedBox(
+              height: 8,
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  if (pickedFile != null && pickedThumbnail != null) {
+                    _largeFileUploader.upload(
+                      uploadUrl: url,
+                      headers: {"Authorization": "Bearer $accessToken"},
+                      data: {"title": "Sample Title", "thumbnail": pickedThumbnail, "file": pickedFile},
+                      onSendProgress: (progress) => debugPrint(progress.toString()),
+                      onComplete: (response) => debugPrint(response.toString()),
+                    );
+
+                    setState(() {
+                      isFileSelected = false;
+                      isThumbnailSelected = false;
+                    });
+                  } else {
+                    setState(() {
+                      isFileSelected = true;
+                      isThumbnailSelected = true;
+                    });
+                  }
+                },
+                child: const Text("Upload selected file")),
+          ],
+        ),
+      ),
     );
   }
 }
