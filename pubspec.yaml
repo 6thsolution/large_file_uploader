@@ -1,6 +1,6 @@
 name: large_file_uploader
 description: A new Flutter package project.
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/6thsolution/large_file_uploader
 
 environment:
