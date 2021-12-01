@@ -29,11 +29,6 @@ flutter pub get
 import 'package:large_file_uploader/large_file_uploader.dart';
 ```
 
-### 4 - Add the js file
-
-##### Add the [upload_worker.js](https://github.com/6thsolution/large_file_uploader/blob/master/example/web/upload_worker.js) file to your project web folder.
-
-
 
 ## How to use?
 ##### Simple usage
@@ -43,11 +38,11 @@ LargeFileUploader().selectFileAndUpload(
     uploadUrl:
       'https://baseurl.com/upload-path',
     data: {
-      'title': 'awesome file',
+      'title': 'My image', //Additional fields to send with file
     },
     headers: {
       'Authorization':
-          'Bearer jwtToken'
+          'Bearer <accessToken>' 
     },
     onSendProgress: (progress) =>
         debugPrint('onSendProgress:$progress'),
@@ -59,23 +54,37 @@ LargeFileUploader().selectFileAndUpload(
 ##### Advanced usage
 
 ```dart
-LargeFileUploader(
-  jsWorkerName: 'upload_worker.js',
-).selectFileAndUpload(
-  method: 'POST',
-  fileKeyInFormData: 'file',
-  uploadUrl: 'https://baseurl.com/upload-path',
-  data: {
-    'title': 'awesome file',
-  },
-  headers: {'Authorization': 'Bearer jwtToken'},
-  onSendProgress: (progress) =>
-      debugPrint('onSendProgress:$progress'),
-  fakePreProcessMaxProgress: 30,
-  fakePreProcessProgressPeriodInMillisecond: 500,
-  onSendWithFakePreProcessProgress: (progress) =>
-      debugPrint('onSendWithFakePreProcessProgress:$progress'),
-  onComplete: () => debugPrint('onComplete'),
-  onFailure: () => debugPrint('onFailure'),
-);
+  import 'dart:html' as html;
+  import 'package:large_file_uploader/large_file_uploader.dart';
+
+  ...
+
+  final _largeFileUploader = LargeFileUploader();
+  html.File? file; 
+  html.File? thumbnail;
+
+  _largeFileUploader._largeFileUploader.pick(
+        type: FileTypes.video, 
+        callback: (file) {
+        pickedThumbnail = file;
+    });
+  );
+
+  _largeFileUploader._largeFileUploader.pick(
+        customType: 'image/jpeg', 
+        callback: (file) {
+        thumbnail = file;
+    });
+  );
+  
+  if(file != null){
+    _largeFileUploader.upload(
+        uploadUrl: url,
+        headers: {"Authorization": "Bearer <accessToken>"},
+        data: {"title": "My Image", "thumbnail": thumbnail, "file": file},
+        onSendProgress: (progress) => debugPrint(progress.toString()),
+        onComplete: (response) => debugPrint(response.toString()),
+    );
+  }
+  
 ```
