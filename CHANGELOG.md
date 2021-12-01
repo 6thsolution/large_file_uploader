@@ -1,3 +1,6 @@
+## 0.0.3
+* feat(flutter): separating select and upload callbacks
+
 ## 0.0.2
 * feat(flutter): add uploading large file capability via js
 

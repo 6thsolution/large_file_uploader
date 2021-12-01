@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:large_file_uploader/src/enum/file_types.dart';
 import 'package:universal_html/html.dart' as html;
 
 /// Callback exposing currently upload progress.
@@ -9,24 +10,23 @@ typedef UploadProgressListener = Function(int progress);
 typedef UploadFailureListener = Function();
 
 /// Callback exposing upload complete event.
-typedef UploadCompleteListener = Function();
+typedef UploadCompleteListener = Function(String response);
+
+/// Callback exposing one or multiple files selected.
+typedef OnFileSelectedListener = Function(html.File file);
 
 /// Uploading large file util by using JS in flutter web.
 class LargeFileUploader {
-  LargeFileUploader({this.jsWorkerName = 'upload_worker.js'})
-      : _worker = html.Worker(jsWorkerName);
+  LargeFileUploader() : _worker = html.Worker('packages/large_file_uploader/js/upload_worker.js');
 
-  /// The name of the js file in the web folder.
-  ///
-  /// Defaults to 'upload_worker.js'
-  final String jsWorkerName;
   final html.Worker _worker;
   Timer? _timer;
   int _fakeProgress = 0;
 
   void selectFileAndUpload({
     String method = 'POST',
-    String fileKeyInFormData = 'file',
+    FileTypes type = FileTypes.file,
+    String? customFileType,
     required String uploadUrl,
     Map<String, dynamic>? data,
     Map<String, dynamic>? headers,
@@ -37,51 +37,71 @@ class LargeFileUploader {
     UploadFailureListener? onFailure,
     UploadCompleteListener? onComplete,
   }) {
-    html.FileUploadInputElement fileUploadInputElement =
-        html.FileUploadInputElement();
+    pick(
+      type: type,
+      customFileType: customFileType,
+      callback: (file) {
+        data ??= {};
+        data!["file"] = file;
+        upload(uploadUrl: uploadUrl, onSendProgress: onSendProgress, data: data!);
+      },
+    );
+  }
+
+  void pick({
+    FileTypes type = FileTypes.file,
+    String? customFileType,
+    required OnFileSelectedListener callback,
+  }) {
+    html.FileUploadInputElement fileUploadInputElement = html.FileUploadInputElement();
+    fileUploadInputElement.accept = customFileType ?? type.value;
     fileUploadInputElement.multiple = false;
     fileUploadInputElement.click();
 
-    html.File? file;
-
     fileUploadInputElement.onChange.listen((_) {
-      file = fileUploadInputElement.files?.first;
-
-      if (file != null) {
-        _worker.postMessage({
-          'method': method,
-          'fileKeyInFormData': fileKeyInFormData,
-          'uploadUrl': uploadUrl,
-          'data': data,
-          'headers': headers,
-          'file': file,
-        });
-
-        if (onSendWithFakePreProcessProgress != null) {
-          _timer = Timer.periodic(
-              Duration(milliseconds: fakePreProcessProgressPeriodInMillisecond),
-              (Timer timer) {
-            if (_fakeProgress != fakePreProcessMaxProgress) {
-              _fakeProgress++;
-              onSendWithFakePreProcessProgress.call(_fakeProgress);
-            } else {
-              _disposeTimerAndFakeProgress();
-            }
-          });
-        }
-
-        _worker.onMessage.listen((data) {
-          _handleCallbacks(data.data,
-              onSendProgress: onSendProgress,
-              fakePreProcessMaxProgress: fakePreProcessMaxProgress,
-              onSendWithFakePreProcessProgress:
-                  onSendWithFakePreProcessProgress,
-              onFailure: onFailure,
-              onComplete: onComplete);
-        });
-      } else {
-        onFailure?.call();
+      if (fileUploadInputElement.files != null) {
+        callback.call(fileUploadInputElement.files!.first);
       }
+    });
+  }
+
+  void upload({
+    required String uploadUrl,
+    required UploadProgressListener onSendProgress,
+    required Map<String, dynamic> data,
+    String method = 'POST',
+    Map<String, dynamic>? headers,
+    int fakePreProcessMaxProgress = 30,
+    int fakePreProcessProgressPeriodInMillisecond = 500,
+    UploadProgressListener? onSendWithFakePreProcessProgress,
+    UploadFailureListener? onFailure,
+    UploadCompleteListener? onComplete,
+  }) {
+    _worker.postMessage({
+      'method': method,
+      'uploadUrl': uploadUrl,
+      'data': data,
+      'headers': headers,
+    });
+
+    if (onSendWithFakePreProcessProgress != null) {
+      _timer = Timer.periodic(Duration(milliseconds: fakePreProcessProgressPeriodInMillisecond), (Timer timer) {
+        if (_fakeProgress != fakePreProcessMaxProgress) {
+          _fakeProgress++;
+          onSendWithFakePreProcessProgress.call(_fakeProgress);
+        } else {
+          _disposeTimerAndFakeProgress();
+        }
+      });
+    }
+
+    _worker.onMessage.listen((data) {
+      _handleCallbacks(data.data,
+          onSendProgress: onSendProgress,
+          fakePreProcessMaxProgress: fakePreProcessMaxProgress,
+          onSendWithFakePreProcessProgress: onSendWithFakePreProcessProgress,
+          onFailure: onFailure,
+          onComplete: onComplete);
     });
   }
 
@@ -99,18 +119,16 @@ class LargeFileUploader {
       onSendProgress.call(data);
       if (data != 0) {
         _disposeTimerAndFakeProgress();
-        onSendWithFakePreProcessProgress?.call((fakePreProcessMaxProgress +
-                (data * ((100 - fakePreProcessMaxProgress) / 100)))
-            .toInt());
+        onSendWithFakePreProcessProgress
+            ?.call((fakePreProcessMaxProgress + (data * ((100 - fakePreProcessMaxProgress) / 100))).toInt());
       }
-    } else if (data.toString() == 'done') {
-      onSendProgress.call(100);
-      onSendWithFakePreProcessProgress?.call(100);
-      _disposeTimerAndFakeProgress();
-      onComplete?.call();
     } else if (data.toString() == 'request failed') {
       _disposeTimerAndFakeProgress();
       onFailure?.call();
+    } else {
+      onSendWithFakePreProcessProgress?.call(100);
+      _disposeTimerAndFakeProgress();
+      onComplete?.call(data);
     }
   }
 
