@@ -12,6 +12,8 @@ flutter:
     platforms:
       web:
         default_package: large_file_uploader
+  assets:
+    - lib/js/upload_worker.js
 
 dependencies:
   flutter:
