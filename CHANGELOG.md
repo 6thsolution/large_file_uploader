@@ -1,3 +1,6 @@
+## 0.0.4
+* fix(flutter): add js as asset in pubspec
+
 ## 0.0.3
 * feat(flutter): separating select and upload callbacks
 
