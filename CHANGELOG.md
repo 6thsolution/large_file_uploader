@@ -1,3 +1,6 @@
+## 0.0.5
+* fix(flutter): change js worker path
+
 ## 0.0.4
 * fix(flutter): add js as asset in pubspec
 
