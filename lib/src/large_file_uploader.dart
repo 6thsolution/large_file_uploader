@@ -17,7 +17,7 @@ typedef OnFileSelectedListener = Function(html.File file);
 
 /// Uploading large file util by using JS in flutter web.
 class LargeFileUploader {
-  LargeFileUploader() : _worker = html.Worker('packages/large_file_uploader/js/upload_worker.js');
+  LargeFileUploader() : _worker = html.Worker('packages/large_file_uploader/lib/js/upload_worker.js');
 
   final html.Worker _worker;
   Timer? _timer;
