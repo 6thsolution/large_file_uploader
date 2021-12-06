@@ -1,6 +1,6 @@
 name: large_file_uploader
 description: A new Flutter package project.
-version: 0.0.3
+version: 0.0.5
 homepage: https://github.com/6thsolution/large_file_uploader
 
 environment:
@@ -12,6 +12,8 @@ flutter:
     platforms:
       web:
         default_package: large_file_uploader
+  assets:
+    - lib/js/upload_worker.js
 
 dependencies:
   flutter:
