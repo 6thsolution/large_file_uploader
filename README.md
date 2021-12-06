@@ -29,6 +29,9 @@ flutter pub get
 import 'package:large_file_uploader/large_file_uploader.dart';
 ```
 
+### 4 - Copy It
+
+##### Copy upload_worker.js to project public folder
 
 ## How to use?
 ##### Simple usage
