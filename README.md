@@ -10,7 +10,7 @@ A plugin for uploading large file in flutter web.
 
 ```yml
 dependencies:
-  large_file_uploader: ^0.0.6
+  large_file_uploader: ^0.0.7
 ```
 
 
