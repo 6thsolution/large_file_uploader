@@ -23,6 +23,8 @@ class LargeFileUploader {
   Timer? _timer;
   int _fakeProgress = 0;
 
+  StreamSubscription? _streamSubscription;
+
   void selectFileAndUpload({
     String method = 'POST',
     FileTypes type = FileTypes.file,
@@ -90,7 +92,7 @@ class LargeFileUploader {
     UploadProgressListener? onSendWithFakePreProcessProgress,
     UploadFailureListener? onFailure,
     UploadCompleteListener? onComplete,
-  }) {
+  }) async {
     _worker.postMessage({
       'method': method,
       'uploadUrl': uploadUrl,
@@ -109,7 +111,7 @@ class LargeFileUploader {
       });
     }
 
-    _worker.onMessage.listen((data) {
+    _streamSubscription = _worker.onMessage.listen((data) {
       _handleCallbacks(
         data.data,
         onSendProgress: onSendProgress,
@@ -145,6 +147,7 @@ class LargeFileUploader {
       onSendWithFakePreProcessProgress?.call(100);
       _disposeTimerAndFakeProgress();
       onComplete?.call(data);
+      _streamSubscription?.cancel();
     }
   }
 
