@@ -27,6 +27,7 @@ class LargeFileUploader {
     String method = 'POST',
     FileTypes type = FileTypes.file,
     String? customFileType,
+    bool allowMultiple = false,
     required String uploadUrl,
     Map<String, dynamic>? data,
     Map<String, dynamic>? headers,
@@ -40,10 +41,22 @@ class LargeFileUploader {
     pick(
       type: type,
       customFileType: customFileType,
+      allowMultiple: allowMultiple,
       callback: (file) {
         data ??= {};
         data!["file"] = file;
-        upload(uploadUrl: uploadUrl, onSendProgress: onSendProgress, data: data!);
+        upload(
+          method: method,
+          uploadUrl: uploadUrl,
+          data: data!,
+          headers: headers,
+          onSendProgress: onSendProgress,
+          fakePreProcessMaxProgress: fakePreProcessMaxProgress,
+          fakePreProcessProgressPeriodInMillisecond: fakePreProcessProgressPeriodInMillisecond,
+          onSendWithFakePreProcessProgress: onSendWithFakePreProcessProgress,
+          onFailure: onFailure,
+          onComplete: onComplete,
+        );
       },
     );
   }
@@ -51,11 +64,12 @@ class LargeFileUploader {
   void pick({
     FileTypes type = FileTypes.file,
     String? customFileType,
+    bool allowMultiple = false,
     required OnFileSelectedListener callback,
   }) {
     html.FileUploadInputElement fileUploadInputElement = html.FileUploadInputElement();
     fileUploadInputElement.accept = customFileType ?? type.value;
-    fileUploadInputElement.multiple = false;
+    fileUploadInputElement.multiple = allowMultiple;
     fileUploadInputElement.click();
 
     fileUploadInputElement.onChange.listen((_) {
@@ -66,11 +80,11 @@ class LargeFileUploader {
   }
 
   void upload({
-    required String uploadUrl,
-    required UploadProgressListener onSendProgress,
-    required Map<String, dynamic> data,
     String method = 'POST',
+    required String uploadUrl,
+    required Map<String, dynamic> data,
     Map<String, dynamic>? headers,
+    required UploadProgressListener onSendProgress,
     int fakePreProcessMaxProgress = 30,
     int fakePreProcessProgressPeriodInMillisecond = 500,
     UploadProgressListener? onSendWithFakePreProcessProgress,
@@ -96,12 +110,14 @@ class LargeFileUploader {
     }
 
     _worker.onMessage.listen((data) {
-      _handleCallbacks(data.data,
-          onSendProgress: onSendProgress,
-          fakePreProcessMaxProgress: fakePreProcessMaxProgress,
-          onSendWithFakePreProcessProgress: onSendWithFakePreProcessProgress,
-          onFailure: onFailure,
-          onComplete: onComplete);
+      _handleCallbacks(
+        data.data,
+        onSendProgress: onSendProgress,
+        fakePreProcessMaxProgress: fakePreProcessMaxProgress,
+        onSendWithFakePreProcessProgress: onSendWithFakePreProcessProgress,
+        onFailure: onFailure,
+        onComplete: onComplete,
+      );
     });
   }
 
