@@ -107,9 +107,10 @@ class _UploadExampleState extends State<UploadExample> {
                   if (pickedFile != null && pickedThumbnail != null) {
                     _largeFileUploader.upload(
                       uploadUrl: url,
+                      id: '1',
                       headers: {"Authorization": "Bearer $accessToken"},
                       data: {"title": "Sample Title", "thumbnail": pickedThumbnail, "file": pickedFile},
-                      onSendProgress: (progress) => debugPrint(progress.toString()),
+                      onSendProgress: (progress, id) => debugPrint('$id: $progress'),
                       onComplete: (response) => debugPrint(response.toString()),
                     );
 
