@@ -27,7 +27,6 @@ class LargeFileUploader {
 
   void selectFileAndUpload({
     String method = 'POST',
-    required String id,
     FileTypes type = FileTypes.file,
     String? customFileType,
     bool allowMultiple = false,
@@ -50,7 +49,7 @@ class LargeFileUploader {
         data!["file"] = file;
         upload(
           method: method,
-          id: id,
+          name: file.name,
           uploadUrl: uploadUrl,
           data: data!,
           headers: headers,
@@ -87,7 +86,7 @@ class LargeFileUploader {
 
   void upload({
     String method = 'POST',
-    required String id,
+    required String name,
     required String uploadUrl,
     required Map<String, dynamic> data,
     Map<String, dynamic>? headers,
@@ -119,7 +118,7 @@ class LargeFileUploader {
     _streamSubscription = _worker.onMessage.listen((data) {
       _handleCallbacks(
         data.data,
-        id: id,
+        name: name,
         onSendProgress: onSendProgress,
         fakePreProcessMaxProgress: fakePreProcessMaxProgress,
         onSendWithFakePreProcessProgress: onSendWithFakePreProcessProgress,
@@ -131,7 +130,7 @@ class LargeFileUploader {
 
   void _handleCallbacks(
     data, {
-    required String id,
+    required String name,
     required UploadProgressListener onSendProgress,
     required int fakePreProcessMaxProgress,
     UploadProgressListener? onSendWithFakePreProcessProgress,
@@ -141,19 +140,19 @@ class LargeFileUploader {
     if (data == null) return;
 
     if (data is int) {
-      onSendProgress.call(data, id);
+      onSendProgress.call(data, name);
       if (data != 0) {
         _disposeTimerAndFakeProgress();
         onSendWithFakePreProcessProgress?.call(
           (fakePreProcessMaxProgress + (data * ((100 - fakePreProcessMaxProgress) / 100))).toInt(),
-          id,
+          name,
         );
       }
     } else if (data.toString() == 'request failed') {
       _disposeTimerAndFakeProgress();
       onFailure?.call();
     } else {
-      onSendWithFakePreProcessProgress?.call(100, id);
+      onSendWithFakePreProcessProgress?.call(100, name);
       _disposeTimerAndFakeProgress();
       onComplete?.call(data);
       _streamSubscription?.cancel();
